@@ -9,6 +9,32 @@
 #import "NUIConverter.h"
 #import "NUIConstants.h"
 
+@implementation UIColor (DarkMode)
+
+- (UIColor *) dynamicColor {
+    return [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark ? [self withInvertBrightness] : self;
+    }];
+}
+
+- (UIColor *) withInvertBrightness {
+    CGFloat hue, saturation, brightness, alpha;
+    
+    // Extract HSB and alpha components
+    if ([self getHue:&hue saturation:&saturation brightness:&brightness alpha:&alpha]) {
+        // Invert brightness
+        brightness = 1.0 - brightness;
+        
+        // Return the inverted color
+        return [UIColor colorWithHue:hue saturation:saturation brightness:brightness alpha:alpha];
+    }
+    
+    // Return original color if unable to extract HSB
+    return self;
+}
+
+@end
+
 @implementation NUIConverter
 
 + (BOOL)toBoolean:(id)value
@@ -175,7 +201,7 @@
         }
     }
     
-    return color;
+    return [color dynamicColor];
 }
 
 /** Parses a color component in a color expression. Values containing
