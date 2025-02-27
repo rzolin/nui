@@ -23,7 +23,7 @@
     // Extract HSB and alpha components
     if ([self getHue:&hue saturation:&saturation brightness:&brightness alpha:&alpha]) {
         // Invert brightness
-        brightness = 1.0 - brightness;
+        brightness = MIN(1, 1.2 - brightness);
         
         // Return the inverted color
         return [UIColor colorWithHue:hue saturation:saturation brightness:brightness alpha:alpha];
@@ -156,6 +156,13 @@
             return typed_msgSend([UIColor class], selector);
         }
     }
+
+    NSArray *components = [value componentsSeparatedByString:@"-"];
+    BOOL hasDarkColor = components.count == 2;
+    if (hasDarkColor) {
+        BOOL isDarkMode = UIScreen.mainScreen.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
+        value = components[isDarkMode ? 1 : 0];
+    }
     
     // Remove all whitespace.
     NSString *cString = [[[value componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]
@@ -201,7 +208,28 @@
         }
     }
     
-    return [color dynamicColor];
+    return hasDarkColor ? color : [color dynamicColor];
+}
+
+- (UIColor *)colorFromString:(NSString *)colorName {
+    SEL colorSelector = NSSelectorFromString(colorName);
+    UIColor *color = nil;
+
+    // Check if UIColor responds to the selector
+    if ([UIColor respondsToSelector:colorSelector]) {
+        // Use performSelector to get the color (needs suppression for deprecated warning)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+        color = [UIColor performSelector:colorSelector];
+#pragma clang diagnostic pop
+    }
+
+    // If the color is not valid, return nil
+    if (!color) {
+        NSLog(@"Invalid color name: %@", colorName);
+    }
+
+    return color;
 }
 
 /** Parses a color component in a color expression. Values containing

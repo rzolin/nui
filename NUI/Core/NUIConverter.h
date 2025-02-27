@@ -20,6 +20,12 @@
 #   define kTextAlignmentRight      UITextAlignmentRight
 #endif
 
+@interface UIColor (DarkMode)
+
+- (UIColor *) dynamicColor;
+
+@end
+    
 @interface NUIConverter : NSObject
 
 + (BOOL)toBoolean:(id)value;
